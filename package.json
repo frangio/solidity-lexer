@@ -1,0 +1,13 @@
+{
+  "name": "solidity-lexer",
+  "version": "0.0.1",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Francisco Giordano <fg@frang.io>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^14.18.36"
+  }
+}
