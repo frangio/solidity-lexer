@@ -52,6 +52,32 @@ const scomment = (n: boolean) => text.map(t => '//' + t.replace(/[\n\r\u2028\u20
 const mcomment = text.map(t => '/*' + t.replace(/\*\//g, '') + '*/');
 const comment = fc.oneof(scomment(false), mcomment);
 
+const whitespace = fc.stringOf(fc.constantFrom(...' \t\r\n\u000C'), { minLength: 1 });
+
+const solidity = fc.tuple(
+  fc.array(
+    fc.oneof(
+      keyword,
+      keywordBytes,
+      keywordInteger,
+      keywordFixed,
+      ident,
+      string,
+    ),
+    { size: 'large' },
+  ),
+  fc.infiniteStream(
+    fc.oneof(
+      whitespace,
+      mcomment,
+      scomment(true),
+    )
+  ),
+).map(([toks, sepsStream]) => {
+  const seps = [...sepsStream.take(toks.length)];
+  return toks.reduce((code, tok, i) => code + seps[i] + tok, '');
+});
+
 it('keywords', () => {
   fc.assert(
     fc.property(keyword, k => {
@@ -124,5 +150,19 @@ it('identifiers', () => {
       const { kind, value } = lex(w)[0]!;
       assert.deepEqual({ kind, value }, { kind: 'ident', value: w });
     }),
+  );
+});
+
+it('utf8 start + length', () => {
+  fc.assert(
+    fc.property(solidity, code => {
+      const utf8Code = Buffer.from(code, 'utf8');
+      for (const { value, utf8Start, utf8Length } of lex(code)) {
+        assert.equal(
+          value,
+          utf8Code.slice(utf8Start, utf8Start + utf8Length).toString('utf8'),
+        );
+      }
+    })
   );
 });

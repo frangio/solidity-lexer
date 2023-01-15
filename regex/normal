@@ -1,6 +1,5 @@
-\s*
-(?:
-  (?<keyword>
+  (?<whitespace>\s+)
+| (?<keyword>
     abstract
   | address
   | after
@@ -140,4 +139,3 @@
   )
 | (?<semicolon>;)
 | (?<eof>$)
-)

@@ -9,7 +9,9 @@ interface TokenCommon {
   kind: Kind;
   side?: Side;
   value: string;
-  index: number;
+  start: number;
+  utf8Start: number;
+  utf8Length: number;
 }
 
 type Token = TokenCommon & { kind: Exclude<Kind, 'delim'> }
@@ -17,6 +19,7 @@ type Token = TokenCommon & { kind: Exclude<Kind, 'delim'> }
 
 export function lex(source: string): Token[] {
   const res = [];
+  let utf8Offset = 0;
 
   const normal = new RegExp(regex.normal.source, 'gy');
   let pragma;
@@ -30,12 +33,18 @@ export function lex(source: string): Token[] {
       throw Error('lexer error');
     }
 
-    const t = makeToken(m);
+    if (m.groups!.whitespace !== undefined) {
+      continue;
+    }
+
+    const t = makeToken(m, utf8Offset);
 
     res.push(t);
 
     if (t.kind === 'eof') {
       break;
+    } else if (t.kind === 'string' || t.kind === 'comment' || t.kind === 'pragmatoken') {
+      utf8Offset += t.utf8Length - t.value.length;
     } else if (t.kind === 'keyword') {
       if (t.value === 'pragma') {
         pragma ??= new RegExp(regex.pragma.source, 'gy');
@@ -56,12 +65,32 @@ interface RegExpMatch {
   groups?: { [key: string]: string };
 }
 
-const makeToken = (m: RegExpMatch): Token => {
+const makeToken = (m: RegExpMatch, utf8Offset: number): Token => {
   const g = m.groups!;
-  const kind = kinds.find(k => g[k] !== undefined)!;
+  const kind = kinds.find(k => g[k] !== undefined);
+  if (kind === undefined) {
+    throw Error('unrecognized token');
+  }
   const value = g[kind]!;
-  const index = m.index!;
+  const start = m.index!;
+  const utf8Start = start + utf8Offset;
+  const utf8Length = getUtf8Length(value);
   const side = kind !== 'delim' ? undefined : g.rdelim !== undefined ? 'right' : 'left';
-  const t: TokenCommon = { kind, value, index, side };
+  const t: TokenCommon = { kind, value, start, utf8Start, utf8Length, side };
   return t as Token;
 };
+
+let utf8LengthBuffer: Uint8Array;
+
+function getUtf8Length(text: string): number {
+  let length = 0;
+  let read = 0;
+  let enc = new TextEncoder();
+  utf8LengthBuffer ??= new Uint8Array(256);
+  while (read < text.length) {
+    const p = enc.encodeInto(text.slice(read), utf8LengthBuffer);
+    read += p.read!;
+    length += p.written!;
+  }
+  return length;
+}
