@@ -153,11 +153,15 @@ it('identifiers', () => {
   );
 });
 
-it('utf8 start + length', () => {
+it('start + length', () => {
   fc.assert(
     fc.property(solidity, code => {
       const utf8Code = Buffer.from(code, 'utf8');
-      for (const { value, utf8Start, utf8Length } of lex(code)) {
+      for (const { value, start, utf8Start, utf8Length } of lex(code)) {
+        assert.equal(
+          value,
+          code.slice(start, start + value.length),
+        );
         assert.equal(
           value,
           utf8Code.slice(utf8Start, utf8Start + utf8Length).toString('utf8'),
