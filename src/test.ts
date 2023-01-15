@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import assert from 'assert/strict'
 import { lex } from './lex';
 
-const keyword = fc.constantFrom(
+const keywords = new Set([
   'abstract', 'address', 'after', 'alias', 'anonymous',
   'apply', 'as', 'assembly', 'auto', 'bool',
   'break', 'byte', 'bytes', 'calldata', 'case',
@@ -24,15 +24,33 @@ const keyword = fc.constantFrom(
   'try', 'type', 'typedef', 'typeof', 'uint', 'ufixed', 'unchecked',
   'using', 'var', 'view', 'virtual', 'weeks',
   'wei', 'while', 'years',
-);
+]);
 
-const bytes = fc.integer({ min: 1, max: 32 }).map(n => `bytes${n}`);
-const integer = fc
+const keyword = fc.constantFrom(...keywords);
+
+const keywordBytes = fc.integer({ min: 1, max: 32 }).map(n => `bytes${n}`);
+const keywordInteger = fc
   .tuple(fc.constantFrom('', 'u'), fc.integer({ min: 1, max: 32 }))
   .map(([u, i]) => `${u}int${8*i}`);
-const fixed = fc
+const keywordFixed = fc
   .tuple(fc.constantFrom('', 'u'), fc.integer({ min: 1, max: 99 }), fc.integer({ min: 1, max: 99 }))
   .map(([u, i, j]) => `${u}fixed${i}x${j}`);
+
+const identStart = fc.constantFrom(...'_$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+const identAfter = fc.constantFrom(...'_$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+const ident = fc
+  .tuple(identStart, fc.stringOf(identAfter)).map(([s, a]) => s + a)
+  .filter(id => !keywords.has(id));
+
+const text = fc.oneof(fc.asciiString(), fc.unicodeString());
+
+const string = fc
+  .tuple(fc.constantFrom(`'`, `"`), text)
+  .map(([d, s]) => `${d}${s.replace(new RegExp(`${d}|\\\\`, 'g'), '\\$&')}${d}`);
+
+const scomment = (n: boolean) => text.map(t => '//' + t.replace(/[\n\r\u2028\u2029]/g, '') + (n ? '\n' : ''));
+const mcomment = text.map(t => '/*' + t.replace(/\*\//g, '') + '*/');
+const comment = fc.oneof(scomment(false), mcomment);
 
 it('keywords', () => {
   fc.assert(
@@ -44,9 +62,9 @@ it('keywords', () => {
   );
 });
 
-it('bytes', () => {
+it('keywords: bytes types', () => {
   fc.assert(
-    fc.property(bytes, w => {
+    fc.property(keywordBytes, w => {
       const { kind, value } = lex(w)[0]!;
       assert.deepEqual({ kind, value }, { kind: 'keyword', value: w });
     }),
@@ -54,9 +72,9 @@ it('bytes', () => {
   );
 });
 
-it('integers', () => {
+it('keywords: integer types', () => {
   fc.assert(
-    fc.property(integer, w => {
+    fc.property(keywordInteger, w => {
       const { kind, value } = lex(w)[0]!;
       assert.deepEqual({ kind, value }, { kind: 'keyword', value: w });
     }),
@@ -64,12 +82,47 @@ it('integers', () => {
   );
 });
 
-it('fixed', () => {
+it('keywords: fixed types', () => {
   fc.assert(
-    fc.property(fixed, w => {
+    fc.property(keywordFixed, w => {
       const { kind, value } = lex(w)[0]!;
       assert.deepEqual({ kind, value }, { kind: 'keyword', value: w });
     }),
     { ignoreEqualValues: true },
+  );
+});
+
+it('strings', () => {
+  fc.assert(
+    fc.property(string, w => {
+      const { kind, value, utf8Length } = lex(w)[0]!;
+      assert.deepEqual({ kind, value, utf8Length }, {
+        kind: 'string',
+        value: w,
+        utf8Length: Buffer.from(w, 'utf8').length,
+      });
+    }),
+  );
+});
+
+it('comments', () => {
+  fc.assert(
+    fc.property(comment, w => {
+      const { kind, value, utf8Length } = lex(w)[0]!;
+      assert.deepEqual({ kind, value, utf8Length }, {
+        kind: 'comment',
+        value: w,
+        utf8Length: Buffer.from(w, 'utf8').length,
+      });
+    }),
+  );
+});
+
+it('identifiers', () => {
+  fc.assert(
+    fc.property(ident, w => {
+      const { kind, value } = lex(w)[0]!;
+      assert.deepEqual({ kind, value }, { kind: 'ident', value: w });
+    }),
   );
 });
