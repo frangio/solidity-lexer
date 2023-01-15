@@ -3,16 +3,17 @@ import * as regex from './regex';
 const kinds = ['keyword', 'ident', 'symbol', 'delim', 'semicolon', 'number', 'string', 'comment', 'pragmatoken', 'eof'] as const;
 
 type Kind = typeof kinds[number];
+type Side = 'left' | 'right';
 
 interface TokenCommon {
   kind: Kind;
-  side?: 'left' | 'right';
+  side?: Side;
   value: string;
   index: number;
 }
 
 type Token = TokenCommon & { kind: Exclude<Kind, 'delim'> }
-           | TokenCommon & { kind: 'delim', side: NonNullable<TokenCommon['side']> };
+           | TokenCommon & { kind: 'delim', side: Side };
 
 export function lex(source: string): Token[] {
   const res = [];
