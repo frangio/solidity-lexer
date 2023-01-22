@@ -1,4 +1,5 @@
 import * as regex from './regex';
+import { getUtf8Length } from './utils/utf8-length';
 
 const kinds = ['keyword', 'ident', 'symbol', 'delim', 'semicolon', 'number', 'string', 'comment', 'pragmatoken', 'eof'] as const;
 
@@ -79,18 +80,3 @@ const makeToken = (m: RegExpMatch, utf8Offset: number): Token => {
   const t: TokenCommon = { kind, value, start, utf8Start, utf8Length, side };
   return t as Token;
 };
-
-let utf8LengthBuffer: Uint8Array;
-
-function getUtf8Length(text: string): number {
-  let length = 0;
-  let read = 0;
-  let enc = new TextEncoder();
-  utf8LengthBuffer ??= new Uint8Array(256);
-  while (read < text.length) {
-    const p = enc.encodeInto(text.slice(read), utf8LengthBuffer);
-    read += p.read!;
-    length += p.written!;
-  }
-  return length;
-}
