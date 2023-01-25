@@ -1,12 +1,13 @@
 {
   "name": "solidity-lexer",
   "version": "0.0.1",
-  "description": "",
-  "scripts": {
-    "test": "mocha"
-  },
   "author": "Francisco Giordano <fg@frang.io>",
   "license": "MIT",
+  "main": "dist",
+  "scripts": {
+    "prepare": "tsc",
+    "test": "mocha"
+  },
   "devDependencies": {
     "@types/mocha": "^10.0.1",
     "@types/node": "^16.18.11",
