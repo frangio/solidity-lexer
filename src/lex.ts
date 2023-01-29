@@ -1,7 +1,7 @@
 import * as regex from './regex';
 import { getUtf8Length } from './utils/utf8-length';
 
-const kinds = ['keyword', 'ident', 'symbol', 'delim', 'semicolon', 'number', 'string', 'comment', 'pragmatoken', 'eof'] as const;
+const kinds = ['keyword', 'ident', 'symbol', 'delim', 'semicolon', 'number', 'hexnumber', 'string', 'hexstring', 'comment', 'pragmatoken', 'eof'] as const;
 
 type Kind = typeof kinds[number];
 type Side = 'left' | 'right';

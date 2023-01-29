@@ -46,8 +46,12 @@ const ident = fc
 const text = fc.oneof(fc.asciiString(), fc.unicodeString());
 
 const string = fc
-  .tuple(fc.constantFrom(`'`, `"`), text)
-  .map(([d, s]) => `${d}${s.replace(new RegExp(`${d}|[\\\\\n\r]`, 'g'), '\\$&')}${d}`);
+  .tuple(text, fc.constantFrom(`'`, `"`))
+  .map(([s, d]) => `${d}${s.replace(new RegExp(`${d}|[\\\\\n\r]`, 'g'), '\\$&')}${d}`);
+
+const hexstring = fc
+  .tuple(fc.hexaString(), fc.constantFrom(`'`, `"`))
+  .map(([s, d]) => `hex${d}${s.padStart(s.length + (s.length % 2), '0')}${d}`);
 
 const scomment = fc.tuple(text, fc.boolean()).map(([t, d]) => '//' + ((d ? '/' : '') + t).replace(/[\n\r\u2028\u2029]/g, ''));
 const mcomment = fc.tuple(text, fc.boolean()).map(([t, d]) => '/*' + ((d ? '*' : '') + t).replace(/\*\//g, '') + '*/');
@@ -64,6 +68,7 @@ const solidity = fc.tuple(
       keywordFixed,
       ident,
       string,
+      hexstring,
     ),
     { size: 'large' },
   ),
@@ -128,6 +133,16 @@ it('strings', () => {
         value: w,
         utf8Length: Buffer.from(w, 'utf8').length,
       });
+    }),
+  );
+});
+
+it('hex strings', () => {
+  fc.assert(
+    fc.property(hexstring, w => {
+      const t = lex(w)[0]!;
+      assert.equal(t.kind, 'hexstring');
+      assert.equal(t.value, w);
     }),
   );
 });
