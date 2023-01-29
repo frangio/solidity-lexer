@@ -49,9 +49,9 @@ const string = fc
   .tuple(fc.constantFrom(`'`, `"`), text)
   .map(([d, s]) => `${d}${s.replace(new RegExp(`${d}|[\\\\\n\r]`, 'g'), '\\$&')}${d}`);
 
-const scomment = (n: boolean) => text.map(t => '//' + t.replace(/[\n\r\u2028\u2029]/g, '') + (n ? '\n' : ''));
-const mcomment = text.map(t => '/*' + t.replace(/\*\//g, '') + '*/');
-const comment = fc.oneof(scomment(false), mcomment);
+const scomment = fc.tuple(text, fc.boolean()).map(([t, d]) => '//' + ((d ? '/' : '') + t).replace(/[\n\r\u2028\u2029]/g, ''));
+const mcomment = fc.tuple(text, fc.boolean()).map(([t, d]) => '/*' + ((d ? '*' : '') + t).replace(/\*\//g, '') + '*/');
+const comment = fc.oneof(scomment, mcomment);
 
 const whitespace = fc.stringOf(fc.constantFrom(...' \t\r\n\u000C'), { minLength: 1 });
 
@@ -71,7 +71,7 @@ const solidity = fc.tuple(
     fc.oneof(
       whitespace,
       mcomment,
-      scomment(true),
+      scomment.map(c => c + '\n'),
     )
   ),
 ).map(([toks, sepsStream]) => {

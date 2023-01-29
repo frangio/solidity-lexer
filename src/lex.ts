@@ -9,14 +9,16 @@ type Side = 'left' | 'right';
 interface TokenCommon {
   kind: Kind;
   side?: Side;
+  doc?: boolean;
   value: string;
   start: number;
   utf8Start: number;
   utf8Length: number;
 }
 
-type Token = TokenCommon & { kind: Exclude<Kind, 'delim' | 'eof'> }
-           | TokenCommon & { kind: 'delim', side: Side };
+type Token = TokenCommon & { kind: Exclude<Kind, 'delim' | 'comment' | 'eof'> }
+           | TokenCommon & { kind: 'delim', side: Side }
+           | TokenCommon & { kind: 'comment', doc: boolean };
 
 type TokenOrEOF = Token | { kind: 'eof' };
 
@@ -89,7 +91,8 @@ const makeToken = (m: RegExpMatch, utf8Offset: number): TokenOrEOF => {
   const start = m.index!;
   const utf8Start = start + utf8Offset;
   const utf8Length = getUtf8Length(value);
-  const side = kind !== 'delim' ? undefined : g.rdelim !== undefined ? 'right' : 'left';
-  const t: TokenCommon = { kind, value, start, utf8Start, utf8Length, side };
+  const side = kind === 'delim' ? g.rdelim !== undefined ? 'right' : 'left' : undefined;
+  const doc = kind === 'comment' ? (g.sdcomment ?? g.mdcomment) !== undefined : undefined;
+  const t: TokenCommon = { kind, side, doc, value, start, utf8Start, utf8Length };
   return t as TokenOrEOF;
 };
