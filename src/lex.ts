@@ -25,7 +25,7 @@ export function lex(source: string): Token[] {
   let utf8Offset = 0;
 
   const normal = new RegExp(regex.normal.source, 'gy');
-  let pragma;
+  const pragma = new RegExp(regex.pragma.source, 'gy');
 
   let mode = normal;
 
@@ -52,7 +52,6 @@ export function lex(source: string): Token[] {
       utf8Offset += t.utf8Length - t.value.length;
     } else if (t.kind === 'keyword') {
       if (t.value === 'pragma') {
-        pragma ??= new RegExp(regex.pragma.source, 'gy');
         pragma.lastIndex = mode.lastIndex;
         mode = pragma;
       }
