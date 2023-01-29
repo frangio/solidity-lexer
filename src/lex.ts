@@ -48,16 +48,26 @@ export function lex(source: string): Token[] {
 
     res.push(t);
 
-    if (t.kind === 'string' || t.kind === 'comment' || t.kind === 'pragmatoken') {
-      utf8Offset += t.utf8Length - t.value.length;
-    } else if (t.kind === 'keyword') {
-      if (t.value === 'pragma') {
-        pragma.lastIndex = mode.lastIndex;
-        mode = pragma;
-      }
-    } else if (mode === pragma && t.kind === 'semicolon') {
-      normal.lastIndex = mode.lastIndex;
-      mode = normal;
+    switch (t.kind) {
+      case 'string':
+      case 'comment':
+      case 'pragmatoken':
+        utf8Offset += t.utf8Length - t.value.length;
+        break;
+
+      case 'keyword':
+        if (t.value === 'pragma') {
+          pragma.lastIndex = mode.lastIndex;
+          mode = pragma;
+        }
+        break;
+
+      case 'semicolon':
+        if (mode === pragma) {
+          normal.lastIndex = mode.lastIndex;
+          mode = normal;
+        }
+        break;
     }
   }
 
