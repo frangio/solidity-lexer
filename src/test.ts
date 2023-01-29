@@ -2,6 +2,7 @@ import fs from 'fs';
 import fc from 'fast-check';
 import assert from 'assert/strict'
 import { lex } from './lex';
+import * as solidityParser from '@solidity-parser/parser';
 
 const keywords = new Set([
   'abstract', 'address', 'after', 'alias', 'anonymous',
@@ -46,7 +47,7 @@ const text = fc.oneof(fc.asciiString(), fc.unicodeString());
 
 const string = fc
   .tuple(fc.constantFrom(`'`, `"`), text)
-  .map(([d, s]) => `${d}${s.replace(new RegExp(`${d}|\\\\`, 'g'), '\\$&')}${d}`);
+  .map(([d, s]) => `${d}${s.replace(new RegExp(`${d}|[\\\\\n\r]`, 'g'), '\\$&')}${d}`);
 
 const scomment = (n: boolean) => text.map(t => '//' + t.replace(/[\n\r\u2028\u2029]/g, '') + (n ? '\n' : ''));
 const mcomment = text.map(t => '/*' + t.replace(/\*\//g, '') + '*/');
@@ -167,6 +168,16 @@ it('start + length', () => {
           utf8Code.slice(utf8Start, utf8Start + utf8Length).toString('utf8'),
         );
       }
+    })
+  );
+});
+
+it('solidity-parser baseline', () => {
+  fc.assert(
+    fc.property(solidity, code => {
+      const j = lex(code).map(t => t.value);
+      const b = solidityParser.tokenize(code).map((t: any) => t.value);
+      assert.deepEqual(j, b);
     })
   );
 });
