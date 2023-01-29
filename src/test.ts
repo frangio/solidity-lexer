@@ -62,7 +62,7 @@ const whitespace = fc.stringOf(fc.constantFrom(...' \t\r\n\u000C'), { minLength:
 const solidity = fc.tuple(
   fc.array(
     fc.oneof(
-      keyword,
+      keyword.filter(k => k !== 'assembly'),
       keywordBytes,
       keywordInteger,
       keywordFixed,

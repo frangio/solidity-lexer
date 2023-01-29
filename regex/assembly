@@ -1,0 +1,12 @@
+  (?<whitespace>\s+)
+| (?<string>"(?:[^\\"\n\r]*|\\[^])*")
+| (?<comment>
+    //.*
+  | /\*[^]*?\*/
+  )
+| (?<delim>
+    (?<ldelim>[({])
+  | (?<rdelim>[)])
+  )
+| (?<symbol>,)
+| (?<eof>$)

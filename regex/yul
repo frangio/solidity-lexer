@@ -1,0 +1,126 @@
+  (?<whitespace>\s+)
+| (?:
+    (?<keyword>
+      break
+    | case
+    | continue
+    | default
+    | false
+    | for
+    | function
+    | if
+    | leave
+    | let
+    | switch
+    | true
+    | hex(?!["'])
+    )
+  | (?<yulbuiltin>
+      stop
+    | add
+    | sub
+    | mul
+    | div
+    | sdiv
+    | mod
+    | smod
+    | exp
+    | not
+    | lt
+    | gt
+    | slt
+    | sgt
+    | eq
+    | iszero
+    | and
+    | or
+    | xor
+    | byte
+    | shl
+    | shr
+    | sar
+    | addmod
+    | mulmod
+    | signextend
+    | keccak256
+    | pop
+    | mload
+    | mstore
+    | mstore8
+    | sload
+    | sstore
+    | msize
+    | gas
+    | address
+    | balance
+    | selfbalance
+    | caller
+    | callvalue
+    | calldataload
+    | calldatasize
+    | calldatacopy
+    | extcodesize
+    | extcodecopy
+    | returndatasize
+    | returndatacopy
+    | extcodehash
+    | create
+    | create2
+    | call
+    | callcode
+    | delegatecall
+    | staticcall
+    | return
+    | revert
+    | selfdestruct
+    | invalid
+    | log0
+    | log1
+    | log2
+    | log3
+    | log4
+    | chainid
+    | origin
+    | gasprice
+    | blockhash
+    | coinbase
+    | timestamp
+    | number
+    | difficulty
+    | prevrandao
+    | gaslimit
+    | basefee
+    )
+  | (?<hexnumber>0x[0-9a-fA-F]+)
+  | (?<number>
+      0
+    | [1-9][0-9]*
+    )
+  )
+  (?![a-zA-Z0-9$_])
+| (?<string>
+    '(?:[^\\'\n\r]*|\\[^])*'
+  | "(?:[^\\"\n\r]*|\\[^])*"
+  )
+| (?<hexstring>
+    hex
+    (?:
+      '(?:(?:[0-9a-fA-F]{2})+(?:_(?:[0-9a-fA-F]{2})+)*)?'
+    | "(?:(?:[0-9a-fA-F]{2})+(?:_(?:[0-9a-fA-F]{2})+)*)?"
+    )
+  )
+| (?<ident>[a-zA-Z$_][a-zA-Z0-9$_]*)
+| (?<comment>
+    //.*
+  | /\*[^]*?\*/
+  )
+| (?<delim>
+    (?<ldelim>[({])
+  | (?<rdelim>[)}])
+  )
+| (?<symbol>
+    :=
+  | ->
+  | [.,]
+  )
+| (?<eof>$)

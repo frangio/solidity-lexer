@@ -1,7 +1,7 @@
 import * as regex from './regex';
 import { getUtf8Length } from './utils/utf8-length';
 
-const kinds = ['keyword', 'ident', 'symbol', 'delim', 'semicolon', 'number', 'hexnumber', 'string', 'hexstring', 'comment', 'pragmatoken', 'eof'] as const;
+const kinds = ['keyword', 'ident', 'symbol', 'delim', 'semicolon', 'number', 'hexnumber', 'string', 'hexstring', 'comment', 'pragmatoken', 'eof', 'yulbuiltin'] as const;
 const utf8Kinds = ['comment', 'string', 'pragmatoken'];
 
 type Kind = typeof kinds[number];
@@ -29,8 +29,11 @@ export function lex(source: string): Token[] {
 
   const normal = new RegExp(regex.normal.source, 'gy');
   const pragma = new RegExp(regex.pragma.source, 'gy');
+  const assembly = new RegExp(regex.assembly.source, 'gy');
+  const yul = new RegExp(regex.yul.source, 'gy');
 
   let mode = normal;
+  let yulDepth = 0;
 
   while (true) {
     const m = mode.exec(source);
@@ -54,23 +57,56 @@ export function lex(source: string): Token[] {
     switch (t.kind) {
       case 'string':
       case 'comment':
-      case 'pragmatoken':
+      case 'pragmatoken': {
         utf8Offset += t.utf8Length - t.value.length;
         break;
+      }
 
-      case 'keyword':
+      case 'keyword': {
         if (t.value === 'pragma') {
           pragma.lastIndex = mode.lastIndex;
           mode = pragma;
         }
+        else if (t.value === 'assembly') {
+          assembly.lastIndex = mode.lastIndex;
+          mode = assembly;
+        }
         break;
+      }
+    }
 
-      case 'semicolon':
-        if (mode === pragma) {
+    switch (mode) {
+      case pragma: {
+        if (t.kind === 'semicolon') {
           normal.lastIndex = mode.lastIndex;
           mode = normal;
         }
         break;
+      }
+
+      case assembly: {
+        if (t.kind === 'delim' && t.value === '{') {
+          yulDepth += 1;
+          yul.lastIndex = mode.lastIndex;
+          mode = yul;
+        }
+        break;
+      }
+
+      case yul: {
+        if (t.kind === 'delim') {
+          if (t.value === '{') {
+            yulDepth += 1;
+          } else if (t.value === '}') {
+            yulDepth -= 1;
+            if (yulDepth === 0) {
+              normal.lastIndex = mode.lastIndex;
+              mode = normal;
+            }
+          }
+        }
+        break;
+      }
     }
   }
 
