@@ -2,6 +2,7 @@ import * as regex from './regex';
 import { getUtf8Length } from './utils/utf8-length';
 
 const kinds = ['keyword', 'ident', 'symbol', 'delim', 'semicolon', 'number', 'hexnumber', 'string', 'hexstring', 'comment', 'pragmatoken', 'eof'] as const;
+const utf8Kinds = ['comment', 'string', 'pragmatoken'];
 
 type Kind = typeof kinds[number];
 type Side = 'left' | 'right';
@@ -90,7 +91,7 @@ const makeToken = (m: RegExpMatch, utf8Offset: number): TokenOrEOF => {
   const value = g[kind]!;
   const start = m.index!;
   const utf8Start = start + utf8Offset;
-  const utf8Length = getUtf8Length(value);
+  const utf8Length = utf8Kinds.includes(kind) ? getUtf8Length(value) : value.length;
   const side = kind === 'delim' ? g.rdelim !== undefined ? 'right' : 'left' : undefined;
   const doc = kind === 'comment' ? (g.sdcomment ?? g.mdcomment) !== undefined : undefined;
   const t: TokenCommon = { kind, side, doc, value, start, utf8Start, utf8Length };
