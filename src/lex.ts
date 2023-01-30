@@ -24,16 +24,15 @@ type Token = TokenCommon & { kind: Exclude<Kind, 'delim' | 'comment' | 'eof'> }
 type TokenOrEOF = Token | { kind: 'eof' };
 
 export function lex(source: string): Token[] {
-  const res = [];
-  let utf8Offset = 0;
-
   const normal = new RegExp(regex.normal.source, 'gy');
   const pragma = new RegExp(regex.pragma.source, 'gy');
   const assembly = new RegExp(regex.assembly.source, 'gy');
   const yul = new RegExp(regex.yul.source, 'gy');
 
-  let mode = normal;
+  const res = [];
+  let utf8Offset = 0;
   let yulDepth = 0;
+  let mode = normal;
 
   while (true) {
     const m = mode.exec(source);
