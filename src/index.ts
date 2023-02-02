@@ -1,1 +1,1 @@
-export { lex } from './lex';
+export { lex, Token } from './lex';

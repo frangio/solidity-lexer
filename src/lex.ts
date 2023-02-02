@@ -17,9 +17,9 @@ interface TokenCommon {
   utf8Length: number;
 }
 
-type Token = TokenCommon & { kind: Exclude<Kind, 'delim' | 'comment' | 'eof'> }
-           | TokenCommon & { kind: 'delim', side: Side }
-           | TokenCommon & { kind: 'comment', doc: boolean };
+export type Token = TokenCommon & { kind: Exclude<Kind, 'delim' | 'comment' | 'eof'> }
+                  | TokenCommon & { kind: 'delim', side: Side }
+                  | TokenCommon & { kind: 'comment', doc: boolean };
 
 type TokenOrEOF = Token | { kind: 'eof' };
 
